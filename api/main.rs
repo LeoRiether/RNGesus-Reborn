@@ -10,7 +10,7 @@ fn execute(text: &str) -> Option<String> {
     let command_end_index = text.find(' ').unwrap_or(text.len());
     let (cmd, args) = text.split_at(command_end_index);
 
-    match &text[0..command_end_index] {
+    match cmd {
         "/coin" => Some(coin().into()),
         "/list" => Some(list(args)),
         "/yesno" => Some(yesno().into()),
@@ -40,28 +40,39 @@ fn dice(args: &str) -> String {
 }
 
 fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
+    macro_rules! err {
+        ($reason:expr) => {
+            return Ok(Response::builder()
+                .status(StatusCode::OK)
+                .body($reason.to_string())
+                .expect("Something went wrong"))
+            // return Err(NowError::new($reason))
+        };
+    }
+
     let body: serde_json::Value = match req.body() {
-        now_lambda::Body::Binary(data) => {
-            serde_json::from_slice(data).expect("Incorrectly formatted json")
-        }
-        _ => return Err(NowError::new("Request body is not in binary format")),
+        now_lambda::Body::Binary(data) => match serde_json::from_slice(data) {
+            Ok(body) => body,
+            Err(_) => err!("couldn't parse json"),
+        },
+        _ => err!("Request body is not in binary format"),
     };
 
     println!("body = {:#?}", body);
 
     let text = match &body["message"]["text"] {
         serde_json::Value::String(x) => x,
-        _ => return Err(NowError::new("body.message.text does not exist")),
+        _ => err!("body.message.text does not exist"),
     };
 
     let chat_id = match &body["message"]["chat"]["id"] {
         serde_json::Value::Number(x) => x.as_i64().unwrap(),
-        _ => return Err(NowError::new("body.chat.id does not exist")),
+        _ => err!("body.chat.id does not exist"),
     };
 
     let response_text = match execute(&text) {
         Some(x) => x,
-        None => return Err(NowError::new("Couldn't execute command")),
+        None => err!("Couldn't execute command"),
     };
 
     let response_json = json!({

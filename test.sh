@@ -16,6 +16,6 @@ curl --tlsv1.2 -v -k -H "Content-Type: application/json" -H "Cache-Control: no-c
      "first_name":"Test",
      "username":"Test"
   },
-  "text":"/start"
+  "text":"/coin"
 }
 }' "http://localhost:3000/api/main"
