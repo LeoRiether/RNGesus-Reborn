@@ -156,29 +156,15 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         _ => err!("Request body is not in binary format"),
     };
 
-    println!("body = {:#?}", body);
+    let text = match (&body["message"]["text"], &body["message"]["caption"]) {
+        (String(x), _) | (_, String(x)) => x,
+        _ => err!("either body.message.text or body.message.caption do not exist"),
+    };
 
-    macro_rules! unwrap_value {
-        ($value:expr, $type:ident, $error_message:expr) => {
-            match $value {
-                $type(x) => x,
-                _ => err!($error_message),
-            }
-        };
-    }
-
-    let text = unwrap_value!(
-        &body["message"]["text"],
-        String,
-        "body.message.text does not exist"
-    );
-    let chat_id = unwrap_value!(
-        &body["message"]["chat"]["id"],
-        Number,
-        "body.message.chat.id does not exist"
-    )
-    .as_i64()
-    .unwrap();
+    let chat_id = match &body["message"]["chat"]["id"] {
+        Number(x) => x.as_i64().unwrap(),
+        _ => err!("body.message.chat.id does not exist"),
+    };
 
     let response_text = match execute(&text) {
         Some(res) => res,
