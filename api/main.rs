@@ -168,7 +168,10 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         .as_i64()
         .unwrap();
 
-    let response_text = execute(&text).ok_or(NowError::new("Couldn't execute command"))?;
+    let response_text = match execute(&text) {
+        Some(res) => res,
+        None => err!("Couldn't execute command"),
+    }
     let response_json = json!({
         "method": "sendMessage",
         "chat_id": chat_id,
