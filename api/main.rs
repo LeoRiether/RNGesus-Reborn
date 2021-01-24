@@ -1,9 +1,10 @@
 use http::StatusCode;
 use now_lambda::{error::NowError, lambda, IntoResponse, Request, Response};
+use rand::prelude::*;
 use std::error::Error;
 
 fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
-    dbg!(req);
+    println!("req = {:?}", req);
 
     let response = Response::builder()
         .status(StatusCode::OK)
