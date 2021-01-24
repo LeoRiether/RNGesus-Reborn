@@ -171,7 +171,7 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
     let response_text = match execute(&text) {
         Some(res) => res,
         None => err!("Couldn't execute command"),
-    }
+    };
     let response_json = json!({
         "method": "sendMessage",
         "chat_id": chat_id,
