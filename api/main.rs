@@ -156,6 +156,8 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         _ => err!("Request body is not in binary format"),
     };
 
+    println!("body = {:#?}", body);
+
     macro_rules! unwrap_value {
         ($value:expr, $type:ident, $error_message:expr) => {
             match $value {
