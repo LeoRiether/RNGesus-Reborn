@@ -4,6 +4,11 @@ use rand::{prelude::*, random, thread_rng};
 use serde_json::json;
 use std::error::Error;
 
+fn choose_from<T: Copy>(a: &[T]) -> T {
+    let i = thread_rng().gen_range(0..a.len());
+    a[i]
+}
+
 const BOTMENTION: &'static str = "@therngesusbot";
 
 // Parses and executes the text sent by a user, returning the response RNGesus
@@ -31,6 +36,21 @@ fn coin() -> &'static str {
 }
 
 fn list(text: &str) -> String {
+    const TEMPLATES: &[&str] = &[
+        "{}, clearly",
+        "I choose {}",
+        "Has to be {}",
+        "{}, isn't it?",
+        "It's {}",
+        "{} is the chosen one",
+        "Couldn't not be {}",
+        "I declare {} to be victorious",
+        "{}, or suffer the consequences",
+        "Either {} or {}",
+        "It's {} or nothing",
+        "{} without a doubt",
+    ];
+
     let args: Vec<_> = text
         .split(',')
         .map(|arg| arg.trim())
@@ -40,10 +60,9 @@ fn list(text: &str) -> String {
         return "Segmentation Fault".into();
     }
 
-    let i = thread_rng().gen_range(0..args.len());
-    let chosen = args[i];
-
-    return chosen.into();
+    let chosen = choose_from(&args);
+    let template = choose_from(TEMPLATES);
+    return template.replace("{}", chosen);
 }
 
 fn yesno() -> &'static str {
@@ -96,7 +115,6 @@ fn yesno() -> &'static str {
 
     let mut rng = thread_rng();
     let roll = rng.gen_range(0..=9);
-    let mut choose_from = |a: &'static [&'static str]| a[rng.gen_range(0..a.len())];
 
     match roll {
         0..=3 => choose_from(YES),
@@ -107,16 +125,17 @@ fn yesno() -> &'static str {
 }
 
 fn dice(arg: &str) -> String {
-    let faces = match arg.trim().parse::<i64>() {
-        Ok(x) => x,
-        Err(_) => return "???".into(),
-    };
-
+    let faces = arg.trim().parse::<i64>().unwrap_or(6);
+    if faces <= 0 {
+        return "...".into();
+    }
     let roll = thread_rng().gen_range(1..=faces);
     format!("Rolled a {}", roll)
 }
 
 fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
+    use serde_json::Value::{self, Number, String};
+
     macro_rules! err {
         ($reason:expr) => {
             return Ok(Response::builder()
@@ -127,7 +146,7 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         };
     }
 
-    let body: serde_json::Value = match req.body() {
+    let body: Value = match req.body() {
         now_lambda::Body::Binary(data) => match serde_json::from_slice(data) {
             Ok(body) => body,
             Err(_) => err!("couldn't parse json"),
@@ -135,23 +154,21 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         _ => err!("Request body is not in binary format"),
     };
 
-    println!("body = {:#?}", body);
+    macro_rules! unwrap_value {
+        ($value:expr, $type:ident, $error_message:expr) => {
+            match $value {
+                $type(x) => x,
+                _ => err!($error_message),
+            }
+        };
+    }
 
-    let text = match &body["message"]["text"] {
-        serde_json::Value::String(x) => x,
-        _ => err!("body.message.text does not exist"),
-    };
+    let text = unwrap_value!(&body["message"]["text"], String, "body.message.text does not exist");
+    let chat_id = unwrap_value!(&body["message"]["chat"]["id"], Number, "body.message.chat.id does not exist")
+        .as_i64()
+        .unwrap();
 
-    let chat_id = match &body["message"]["chat"]["id"] {
-        serde_json::Value::Number(x) => x.as_i64().unwrap(),
-        _ => err!("body.chat.id does not exist"),
-    };
-
-    let response_text = match execute(&text) {
-        Some(x) => x,
-        None => err!("Couldn't execute command"),
-    };
-
+    let response_text = execute(&text).ok_or(NowError::new("Couldn't execute command"))?;
     let response_json = json!({
         "method": "sendMessage",
         "chat_id": chat_id,
