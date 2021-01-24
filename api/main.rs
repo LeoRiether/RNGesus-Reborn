@@ -21,8 +21,8 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         _ => return Err(NowError::new("body.message.text does not exist")),
     };
 
-    let chat_id = match &body["chad"]["id"] {
-        serde_json::Value::Number(x) => x,
+    let chat_id = match &body["message"]["chat"]["id"] {
+        serde_json::Value::Number(x) => x.as_i64().unwrap(),
         _ => return Err(NowError::new("body.chat.id does not exist")),
     };
 
