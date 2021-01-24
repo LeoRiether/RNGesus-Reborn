@@ -51,8 +51,9 @@ fn list(text: &str) -> String {
         "{} without a doubt",
     ];
 
+    let split_char = if text.find(',').is_some() { ',' } else { ' ' };
     let args: Vec<_> = text
-        .split(',')
+        .split(split_char)
         .map(|arg| arg.trim())
         .filter(|arg| !arg.is_empty())
         .collect();
@@ -163,10 +164,18 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         };
     }
 
-    let text = unwrap_value!(&body["message"]["text"], String, "body.message.text does not exist");
-    let chat_id = unwrap_value!(&body["message"]["chat"]["id"], Number, "body.message.chat.id does not exist")
-        .as_i64()
-        .unwrap();
+    let text = unwrap_value!(
+        &body["message"]["text"],
+        String,
+        "body.message.text does not exist"
+    );
+    let chat_id = unwrap_value!(
+        &body["message"]["chat"]["id"],
+        Number,
+        "body.message.chat.id does not exist"
+    )
+    .as_i64()
+    .unwrap();
 
     let response_text = match execute(&text) {
         Some(res) => res,
