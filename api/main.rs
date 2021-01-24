@@ -9,7 +9,7 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
     //     _ => return Err(NowError::new("Request body is not in binary format"));
     // }
     // let body = deserialize(req);
-    // println!("body = {:?}", body);
+    println!("body = {:?}", req.body());
 
     let response = Response::builder()
         .status(StatusCode::OK)
