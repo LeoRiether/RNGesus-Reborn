@@ -23,7 +23,7 @@ fn execute(text: &str) -> Option<String> {
         "/list" => Some(list(args)),
         "/yesno" => Some(yesno().into()),
         "/dice" => Some(dice(args)),
-        "/say" => Some(args.trim().into())
+        "/say" => Some(args.trim().into()),
 
         _ => None,
     }
