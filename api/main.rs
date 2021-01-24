@@ -4,11 +4,14 @@ use rand::{prelude::*, random, thread_rng};
 use serde_json::json;
 use std::error::Error;
 
+const BOTMENTION: &'static str = "@therngesusbot";
+
 // Parses and executes the text sent by a user, returning the response RNGesus
 // sent from the heavens
 fn execute(text: &str) -> Option<String> {
     let command_end_index = text.find(' ').unwrap_or(text.len());
     let (cmd, args) = text.split_at(command_end_index);
+    let cmd = cmd.trim_end_matches(BOTMENTION);
 
     match cmd {
         "/coin" => Some(coin().into()),
@@ -27,16 +30,90 @@ fn coin() -> &'static str {
     }
 }
 
-fn list(args: &str) -> String {
-    "Not implemented yet".into()
+fn list(text: &str) -> String {
+    let args: Vec<_> = text
+        .split(',')
+        .map(|arg| arg.trim())
+        .filter(|arg| !arg.is_empty())
+        .collect();
+    if args.is_empty() {
+        return "Segmentation Fault".into();
+    }
+
+    let i = thread_rng().gen_range(0..args.len());
+    let chosen = args[i];
+
+    return chosen.into();
 }
 
 fn yesno() -> &'static str {
-    "Not implemented yet"
+    const YES: &[&str] = &[
+        "Yes",
+        "Why not?",
+        "Of course",
+        "Absolutely",
+        "Probably",
+        "There's no reason not to",
+        "I would think so",
+        "Do it now",
+        "Go ahead",
+        "If you must",
+        "Sure, sure",
+        "I'm not against it",
+        "Yeah!",
+        "Hell yeah!",
+        "Do it, or else...",
+        "I'll be waiting for the results",
+    ];
+    const NO: &[&str] = &[
+        "No",
+        "NO",
+        "...why would you even do that?",
+        "Please do not",
+        "No way",
+        "Hell no!",
+        "Nay",
+        "Don't do it, or else...",
+        "Absolutely not",
+        "Absolutely no way whatsoever",
+        "No, no, and no",
+        "You shouldn't",
+    ];
+    const MAYBE: &[&str] = &[
+        "Maybe",
+        "I'm busy now, try again later",
+        "Huh, not sure",
+        "Just do whatever, I don't care",
+        "Decide it yourself",
+        "Who knows",
+        "Yes, but maybe not",
+        "No, but maybe yes",
+        "I'd flip a coin",
+        "¯\\_(ツ)_/¯",
+        "@deadshrugbot",
+        "Are you kidding me?",
+    ];
+
+    let mut rng = thread_rng();
+    let roll = rng.gen_range(0..=9);
+    let mut choose_from = |a: &'static [&'static str]| a[rng.gen_range(0..a.len())];
+
+    match roll {
+        0..=3 => choose_from(YES),
+        4..=7 => choose_from(NO),
+        8..=9 => choose_from(MAYBE),
+        _ => "Only after fixing this bug",
+    }
 }
 
-fn dice(args: &str) -> String {
-    "Not implemented yet".into()
+fn dice(arg: &str) -> String {
+    let faces = match arg.trim().parse::<i64>() {
+        Ok(x) => x,
+        Err(_) => return "???".into(),
+    };
+
+    let roll = thread_rng().gen_range(1..=faces);
+    format!("Rolled a {}", roll)
 }
 
 fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
