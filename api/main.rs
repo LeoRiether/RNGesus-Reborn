@@ -47,6 +47,8 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         _ => return Err(NowError::new("Request body is not in binary format")),
     };
 
+    println!("body = {:#?}", body);
+
     let text = match &body["message"]["text"] {
         serde_json::Value::String(x) => x,
         _ => return Err(NowError::new("body.message.text does not exist")),
