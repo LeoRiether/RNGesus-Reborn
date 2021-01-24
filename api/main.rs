@@ -3,6 +3,8 @@ use now_lambda::{error::NowError, lambda, IntoResponse, Request, Response};
 use std::error::Error;
 
 fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
+    dbg!(req);
+
     let response = Response::builder()
         .status(StatusCode::OK)
         .header("Content-Type", "text/plain")
