@@ -139,7 +139,7 @@ fn dice(arg: &str) -> String {
 
 fn rps() -> &'static str {
     let chosen = choose_from(&["Rock", "Paper", "Scissors"]);
-    let dice = thread_rng().gen_range(0..100);
+    let dice = thread_rng().gen_range(0..33);
     match (chosen, dice) {
         ("Paper", 0) => "Super Paper",
         _ => chosen
