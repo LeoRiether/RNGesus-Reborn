@@ -23,6 +23,8 @@ fn execute(text: &str) -> Option<String> {
         "/list" => Some(list(args)),
         "/yesno" => Some(yesno().into()),
         "/dice" => Some(dice(args)),
+        "/rps" => Some(rps().into()),
+        "/rpsls" => Some(rpsls().into()),
         "/say" => Some(args.trim().into()),
 
         _ => None,
@@ -133,6 +135,19 @@ fn dice(arg: &str) -> String {
     }
     let roll = thread_rng().gen_range(1..=faces);
     format!("Rolled a {}", roll)
+}
+
+fn rps() -> &'static str {
+    let chosen = choose_from(&["Rock", "Paper", "Scissors"]);
+    let dice = thread_rng().gen_range(0..100);
+    match (chosen, dice) {
+        ("Paper", 0) => "Super Paper",
+        _ => chosen
+    }
+}
+
+fn rpsls() -> &'static str {
+    choose_from(&["Rock", "Paper", "Scissors", "Lizard", "Spock"])
 }
 
 fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
