@@ -128,8 +128,9 @@ fn yesno() -> &'static str {
     }
 }
 
-fn dice(arg: &str) -> String {
-    let faces = arg.trim().parse::<i64>().unwrap_or(6);
+fn dice(args: &str) -> String {
+    let first_arg = args.split_ascii_whitespace().next().unwrap_or_default();
+    let faces = first_arg.trim().parse::<i64>().unwrap_or(6);
     if faces <= 0 {
         return "...".into();
     }
@@ -142,7 +143,7 @@ fn rps() -> &'static str {
     let dice = thread_rng().gen_range(0..33);
     match (chosen, dice) {
         ("Paper", 0) => "Super Paper",
-        _ => chosen
+        _ => chosen,
     }
 }
 
