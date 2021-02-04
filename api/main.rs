@@ -11,21 +11,36 @@ fn choose_from<T: Copy>(a: &[T]) -> T {
 
 const BOTMENTION: &'static str = "@therngesusbot";
 
+enum BotResponse {
+    Message(String),
+    LeaveChat,
+}
+
 // Parses and executes the text sent by a user, returning the response RNGesus
 // sent from the heavens
-fn execute(text: &str) -> Option<String> {
+fn execute(text: &str) -> Option<BotResponse> {
     let command_end_index = text.find(' ').unwrap_or(text.len());
     let (cmd, args) = text.split_at(command_end_index);
     let cmd = cmd.trim_end_matches(BOTMENTION);
 
+    use BotResponse::*;
+    macro_rules! wrap {
+        ($response:expr, $tag:ident) => {
+            Some($tag($response.into()))
+        };
+    }
+
     match cmd {
-        "/coin" => Some(coin().into()),
-        "/list" => Some(list(args)),
-        "/yesno" => Some(yesno().into()),
-        "/dice" => Some(dice(args)),
-        "/rps" => Some(rps().into()),
-        "/rpsls" => Some(rpsls().into()),
-        "/say" => Some(args.trim().into()),
+        "/coin" => wrap!(coin(), Message),
+        "/list" => wrap!(list(args), Message),
+        "/yesno" => wrap!(yesno(), Message),
+        "/decide" => wrap!(decide(), Message),
+        "/dice" => wrap!(dice(args), Message),
+        "/rps" => wrap!(rps(), Message),
+        "/rpsls" => wrap!(rpsls(), Message),
+        "/say" => wrap!(args.trim(), Message),
+
+        "/deicide" => Some(LeaveChat),
 
         _ => None,
     }
@@ -76,6 +91,63 @@ fn yesno() -> &'static str {
         "Of course",
         "Absolutely",
         "Probably",
+        "I would think so",
+        "Sure, sure",
+        "Yeah!",
+        "Hell yeah!",
+        "Si",
+        "Oui",
+        "Hai",
+        "Why yes",
+        "Clearly",
+    ];
+    const NO: &[&str] = &[
+        "No",
+        "NO",
+        "No way",
+        "Hell no!",
+        "Nay",
+        "Absolutely not",
+        "There's absolutely no way whatsoever",
+        "No, no, and no",
+        "Of course not",
+        "No, but you already knew that",
+        "Non",
+        "Iie",
+        "Yeah, No",
+        "It's a no from me",
+    ];
+    const MAYBE: &[&str] = &[
+        "Maybe",
+        "I'm busy now, try again later",
+        "Huh, not sure",
+        "Who knows",
+        "Yes, but maybe not",
+        "No, but maybe yes",
+        "¯\\_(ツ)_/¯",
+        "@deadshrugbot",
+        "Are you kidding me?",
+        "The answer lies within yourself",
+    ];
+
+    let mut rng = thread_rng();
+    let roll = rng.gen_range(0..=9);
+
+    match roll {
+        0..=3 => choose_from(YES),
+        4..=7 => choose_from(NO),
+        8..=9 => choose_from(MAYBE),
+        _ => "Only after fixing this bug",
+    }
+}
+
+fn decide() -> &'static str {
+    const YES: &[&str] = &[
+        "Yes",
+        "Why not?",
+        "Of course",
+        "Absolutely",
+        "Probably",
         "There's no reason not to",
         "I would think so",
         "Do it now",
@@ -101,6 +173,7 @@ fn yesno() -> &'static str {
         "Absolutely no way whatsoever",
         "No, no, and no",
         "You shouldn't",
+        "No, but you already knew that",
     ];
     const MAYBE: &[&str] = &[
         "Maybe",
@@ -115,6 +188,8 @@ fn yesno() -> &'static str {
         "¯\\_(ツ)_/¯",
         "@deadshrugbot",
         "Are you kidding me?",
+        "Only if you win at /rps",
+        "Only if you flip heads",
     ];
 
     let mut rng = thread_rng();
@@ -182,15 +257,21 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         _ => err!("body.message.chat.id does not exist"),
     };
 
-    let response_text = match execute(&text) {
-        Some(res) => res,
+    use BotResponse::*;
+    let response_json = match execute(&text) {
+        Some(Message(text)) => json!({
+            "method": "sendMessage",
+            "chat_id": chat_id,
+            "text": text,
+        }),
+
+        Some(LeaveChat) => json!({
+            "method": "leaveChat",
+            "chat_id": chat_id,
+        }),
+
         None => err!("Couldn't execute command"),
     };
-    let response_json = json!({
-        "method": "sendMessage",
-        "chat_id": chat_id,
-        "text": response_text,
-    });
 
     let response = Response::builder()
         .status(StatusCode::OK)
