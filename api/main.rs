@@ -188,6 +188,7 @@ fn decide() -> &'static str {
         "¯\\_(ツ)_/¯",
         "@deadshrugbot",
         "Are you kidding me?",
+        "I don't think",
         "Only if you win at /rps",
         "Only if you flip heads",
     ];
