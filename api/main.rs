@@ -229,7 +229,7 @@ fn rpsls() -> &'static str {
     choose_from(&["Rock", "Paper", "Scissors", "Lizard", "Spock"])
 }
 
-fn get_response(req: Request) -> Result<String, &'static str> {
+fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
     use serde_json::Value;
     let body: Value = match req.body() {
         now_lambda::Body::Binary(data) => {
@@ -275,7 +275,7 @@ fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
         Ok(res) => Ok(Response::builder()
             .status(StatusCode::OK)
             .header("Content-Type", "application/json")
-            .body(res)
+            .body(res.to_string())
             .expect("Something happened")),
 
         Err(e) => Ok(Response::builder()
