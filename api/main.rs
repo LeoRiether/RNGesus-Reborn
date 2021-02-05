@@ -235,6 +235,7 @@ fn send_delete(chat_id: i64, message_id: i64) {
     let client = reqwest::blocking::Client::new();
     dbg!(client
         .post(&format!("https://api.telegram.org/bot{}/deleteMessage", token))
+        .header("Content-Type", "application/json")
         .body(
             json!({
                 "chat_id": chat_id,
