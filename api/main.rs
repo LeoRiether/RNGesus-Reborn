@@ -15,6 +15,7 @@ enum BotResponse {
     Message(String),
     LeaveChat,
     DeleteMessage,
+    DeleteAndSend(String), // delete the command and send some message
 }
 
 // Parses and executes the text sent by a user, returning the response RNGesus
@@ -39,7 +40,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/dice" => wrap!(dice(args), Message),
         "/rps" => wrap!(rps(), Message),
         "/rpsls" => wrap!(rpsls(), Message),
-        "/say" => wrap!(args.trim(), Message),
+        "/say" => wrap!(args.trim(), DeleteAndSend),
 
         "/deicide" => Some(LeaveChat),
         "/deletethis" => Some(DeleteMessage),
@@ -229,6 +230,22 @@ fn rpsls() -> &'static str {
     choose_from(&["Rock", "Paper", "Scissors", "Lizard", "Spock"])
 }
 
+fn send_delete(chat_id: i64, message_id: i64) {
+    let token = std::env::var("BOTTOKEN").unwrap();
+    let client = reqwest::blocking::Client::new();
+    client
+        .post(&format!("https://api.telegram.org/bot{}/deleteMessage", token))
+        .body(
+            json!({
+                "chat_id": chat_id,
+                "message_id": message_id,
+            })
+            .to_string(),
+        )
+        .send()
+        .ok();
+}
+
 fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
     use serde_json::Value;
     let body: Value = match req.body() {
@@ -247,6 +264,10 @@ fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
         .as_i64()
         .ok_or("body.message.chat.id does not exist")?;
 
+    let message_id = body["message"]["message_id"]
+        .as_i64()
+        .ok_or("message.message_id not found");
+
     use BotResponse::*;
     match execute(&text) {
         Some(Message(text)) => Ok(json!({
@@ -263,8 +284,17 @@ fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
         Some(DeleteMessage) => Ok(json!({
             "method": "deleteMessage",
             "chat_id": chat_id,
-            "message_id": body["message"]["message_id"].as_i64().ok_or("message.message_id not found")?,
+            "message_id": message_id?,
         })),
+
+        Some(DeleteAndSend(text)) => {
+            send_delete(chat_id, message_id?);
+            Ok(json!({
+                "method": "sendMessage",
+                "chat_id": chat_id,
+                "text": text,
+            }))
+        }
 
         None => Err("command not found"),
     }

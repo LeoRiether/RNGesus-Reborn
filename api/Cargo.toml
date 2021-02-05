@@ -11,6 +11,10 @@ rand = "0.8.2"
 serde = "1.0.121"
 serde_json = "1.0.61"
 
+  [dependencies.reqwest]
+  version = "0.11"
+  features = [ "blocking" ]
+
 [[bin]]
 name = "main"
 path = "/mnt/c/Workspace/RNGesus-Reborn/api/main.rs"
