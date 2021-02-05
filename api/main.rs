@@ -14,6 +14,7 @@ const BOTMENTION: &'static str = "@therngesusbot";
 enum BotResponse {
     Message(String),
     LeaveChat,
+    DeleteMessage,
 }
 
 // Parses and executes the text sent by a user, returning the response RNGesus
@@ -41,6 +42,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/say" => wrap!(args.trim(), Message),
 
         "/deicide" => Some(LeaveChat),
+        "/deletethis" => Some(DeleteMessage),
 
         _ => None,
     }
@@ -113,7 +115,7 @@ fn yesno() -> &'static str {
         "Of course not",
         "No, but you already knew that",
         "Non",
-        "Iie",
+        "iie",
         "Yeah, No",
         "It's a no from me",
     ];
@@ -227,60 +229,60 @@ fn rpsls() -> &'static str {
     choose_from(&["Rock", "Paper", "Scissors", "Lizard", "Spock"])
 }
 
-fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
-    use serde_json::Value::{self, Number, String};
-
-    macro_rules! err {
-        ($reason:expr) => {
-            return Ok(Response::builder()
-                .status(StatusCode::OK)
-                .body($reason.to_string())
-                .expect("Something went wrong"))
-            // return Err(NowError::new($reason))
-        };
-    }
-
+fn get_response(req: Request) -> Result<String, &'static str> {
+    use serde_json::Value;
     let body: Value = match req.body() {
-        now_lambda::Body::Binary(data) => match serde_json::from_slice(data) {
-            Ok(body) => body,
-            Err(_) => err!("couldn't parse json"),
-        },
-        _ => err!("Request body is not in binary format"),
+        now_lambda::Body::Binary(data) => {
+            serde_json::from_slice(data).map_err(|_| "request body is not valid json")?
+        }
+        _ => return Err("Request body is not in binary format"),
     };
 
-    let text = match (&body["message"]["text"], &body["message"]["caption"]) {
-        (String(x), _) | (_, String(x)) => x,
-        _ => err!("either body.message.text or body.message.caption do not exist"),
-    };
+    let text = body["message"]["text"]
+        .as_str()
+        .or(body["message"]["caption"].as_str())
+        .ok_or("neither body.message.text nor body.message.caption exist")?;
 
-    let chat_id = match &body["message"]["chat"]["id"] {
-        Number(x) => x.as_i64().unwrap(),
-        _ => err!("body.message.chat.id does not exist"),
-    };
+    let chat_id = body["message"]["chat"]["id"]
+        .as_i64()
+        .ok_or("body.message.chat.id does not exist")?;
 
     use BotResponse::*;
-    let response_json = match execute(&text) {
-        Some(Message(text)) => json!({
+    match execute(&text) {
+        Some(Message(text)) => Ok(json!({
             "method": "sendMessage",
             "chat_id": chat_id,
             "text": text,
-        }),
+        })),
 
-        Some(LeaveChat) => json!({
+        Some(LeaveChat) => Ok(json!({
             "method": "leaveChat",
             "chat_id": chat_id,
-        }),
+        })),
 
-        None => err!("Couldn't execute command"),
-    };
+        Some(DeleteMessage) => Ok(json!({
+            "method": "deleteMessage",
+            "chat_id": chat_id,
+            "message_id": body["message"]["message_id"].as_i64().ok_or("message.message_id not found")?,
+        })),
 
-    let response = Response::builder()
-        .status(StatusCode::OK)
-        .header("Content-Type", "application/json")
-        .body(response_json.to_string())
-        .expect("Internal Server Error");
+        None => Err("command not found"),
+    }
+}
 
-    Ok(response)
+fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
+    match get_response(req) {
+        Ok(res) => Ok(Response::builder()
+            .status(StatusCode::OK)
+            .header("Content-Type", "application/json")
+            .body(res)
+            .expect("Something happened")),
+
+        Err(e) => Ok(Response::builder()
+            .status(StatusCode::OK)
+            .body(e.into())
+            .expect("Something happened")),
+    }
 }
 
 // Start the runtime with the handler
