@@ -233,7 +233,7 @@ fn rpsls() -> &'static str {
 fn send_delete(chat_id: i64, message_id: i64) {
     let token = std::env::var("BOT_TOKEN").unwrap();
     let client = reqwest::blocking::Client::new();
-    client
+    dbg!(client
         .post(&format!("https://api.telegram.org/bot{}/deleteMessage", token))
         .body(
             json!({
@@ -242,7 +242,7 @@ fn send_delete(chat_id: i64, message_id: i64) {
             })
             .to_string(),
         )
-        .send()
+        .send())
         .ok();
 }
 
