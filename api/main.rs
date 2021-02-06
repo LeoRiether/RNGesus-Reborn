@@ -43,7 +43,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/say" => wrap!(args.trim(), DeleteAndSend),
 
         "/deicide" => Some(LeaveChat),
-        "/deletethis" => Some(DeleteMessage),
+        "/deletethis" | "/wakeup" => Some(DeleteMessage),
 
         _ => None,
     }
