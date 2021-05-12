@@ -225,7 +225,8 @@ fn decide() -> &'static str {
 // /dice 10,20 Some {} Format {} => Some {dice 10} Format {dice 20}
 // /dice 1,2 {} {} {} => {dice 1} {dice 2} {another dice 2}
 fn dice(args: &str) -> String {
-    let (dice_arg, format_arg) = args.trim_start().split_once(' ').unwrap_or((args, "Rolled a {}"));
+    let args = args.trim_start();
+    let (dice_arg, format_arg) = args.split_once(' ').unwrap_or((args, "Rolled a {}"));
     let faces: Vec<_> = dice_arg.split(',').map(|d| d.parse::<i64>().unwrap_or(6)).collect();
     if faces.iter().min().copied().unwrap_or(0) <= 0 {
         return "...".into();
