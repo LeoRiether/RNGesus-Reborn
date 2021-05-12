@@ -208,7 +208,7 @@ fn decide() -> &'static str {
 }
 
 fn dice(args: &str) -> String {
-    let (dice_arg, format_arg) = args.split_once(' ').or((args, "Rolled a {}");
+    let (dice_arg, format_arg) = args.split_once(' ').or((args, "Rolled a {}"));
     let faces = dice_arg.trim().parse::<i64>().unwrap_or(6);
     if faces <= 0 {
         return "...".into();
