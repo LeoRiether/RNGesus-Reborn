@@ -9,6 +9,18 @@ fn choose_from<T: Copy>(a: &[T]) -> T {
     a[i]
 }
 
+fn join_with<'i, I, S>(mut it: I, sep: S) -> String
+    where I: Iterator<Item = &'i str>,
+          S: Fn(usize) -> String
+{
+    let mut res = it.next().map(|s| s.to_string()).unwrap_or_default();
+    for (i, s) in it.enumerate() {
+        res.push_str(&sep(i));
+        res.push_str(&s);
+    }
+    res
+}
+
 const BOTMENTION: &'static str = "@therngesusbot";
 
 enum BotResponse {
@@ -219,16 +231,12 @@ fn dice(args: &str) -> String {
         return "...".into();
     }
 
-    let mut format_split = format_arg.split("{}");
-    let mut res = format_split.next().map(|x| x.to_string()).unwrap_or_default();
-    for (i, s) in format_split.enumerate() {
+    let format_split = format_arg.split("{}");
+    join_with(format_split, |i| {
         let f  = faces.get(i).or(faces.last()).copied().unwrap_or(6);
         let roll = thread_rng().gen_range(1..=f);
-        res.push_str(&roll.to_string());
-        res.push_str(s);
-    }
-
-    res
+        roll.to_string()
+    })
 }
 
 fn rps() -> &'static str {
