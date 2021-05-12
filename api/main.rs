@@ -215,7 +215,7 @@ fn dice(args: &str) -> String {
     }
     let roll = thread_rng().gen_range(1..=faces);
 
-    format_arg.replace("{}", faces.to_string());
+    format_arg.replace("{}", &roll.to_string())
 }
 
 fn rps() -> &'static str {
