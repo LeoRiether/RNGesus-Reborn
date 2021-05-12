@@ -207,15 +207,28 @@ fn decide() -> &'static str {
     }
 }
 
+// /dice => dice 6
+// /dice 10 => dice 10
+// /dice 10,20 => dice 10
+// /dice 10,20 Some {} Format {} => Some {dice 10} Format {dice 20}
+// /dice 1,2 {} {} {} => {dice 1} {dice 2} {another dice 2}
 fn dice(args: &str) -> String {
     let (dice_arg, format_arg) = args.trim_start().split_once(' ').unwrap_or((args, "Rolled a {}"));
-    let faces = dice_arg.trim().parse::<i64>().unwrap_or(6);
-    if faces <= 0 {
+    let faces: Vec<_> = dice_arg.split(',').map(|d| d.parse::<i64>().unwrap_or(6)).collect();
+    if faces.iter().min().copied().unwrap_or(0) <= 0 {
         return "...".into();
     }
-    let roll = thread_rng().gen_range(1..=faces);
 
-    format_arg.replace("{}", &roll.to_string())
+    let mut format_split = format_arg.split("{}");
+    let mut res = format_split.next().map(|x| x.to_string()).unwrap_or_default();
+    for (i, s) in format_split.enumerate() {
+        let f  = faces.get(i).or(faces.last()).copied().unwrap_or(6);
+        let roll = thread_rng().gen_range(1..=f);
+        res.push_str(&roll.to_string());
+        res.push_str(s);
+    }
+
+    res
 }
 
 fn rps() -> &'static str {
