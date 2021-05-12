@@ -208,13 +208,14 @@ fn decide() -> &'static str {
 }
 
 fn dice(args: &str) -> String {
-    let first_arg = args.split_ascii_whitespace().next().unwrap_or_default();
-    let faces = first_arg.trim().parse::<i64>().unwrap_or(6);
+    let (dice_arg, format_arg) = args.split_once(' ').or((args, "Rolled a {}");
+    let faces = dice_arg.trim().parse::<i64>().unwrap_or(6);
     if faces <= 0 {
         return "...".into();
     }
     let roll = thread_rng().gen_range(1..=faces);
-    format!("Rolled a {}", roll)
+
+    format_arg.replace("{}", faces.to_string());
 }
 
 fn rps() -> &'static str {
