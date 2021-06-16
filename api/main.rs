@@ -1,6 +1,6 @@
 use http::StatusCode;
 use now_lambda::{error::NowError, lambda, IntoResponse, Request, Response};
-use rand::{prelude::*, random, thread_rng};
+use rand::{prelude::*, seq::SliceRandom, random, thread_rng};
 use serde_json::json;
 use std::error::Error;
 
@@ -53,6 +53,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/rps" => wrap!(rps(), Message),
         "/rpsls" => wrap!(rpsls(), Message),
         "/say" => wrap!(args.trim(), DeleteAndSend),
+        "/anagram" => wrap!(anagram(args), Message),
 
         "/deicide" => Some(LeaveChat),
         "/deletethis" | "/wakeup" => Some(DeleteMessage),
@@ -251,6 +252,13 @@ fn rps() -> &'static str {
 
 fn rpsls() -> &'static str {
     choose_from(&["Rock", "Paper", "Scissors", "Lizard", "Spock"])
+}
+
+fn anagram(arg: &str) -> String {
+    let mut word: Vec<char> = arg.trim().chars().collect();
+    let slice = word.as_mut_slice();
+    slice.shuffle(&mut thread_rng());
+    slice.iter().map(|x| *x).collect()
 }
 
 fn send_delete(chat_id: i64, message_id: i64) {
