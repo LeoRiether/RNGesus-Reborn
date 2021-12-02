@@ -5,8 +5,7 @@ use serde_json::json;
 use std::error::Error;
 
 fn choose_from<T: Copy>(a: &[T]) -> T {
-    let i = thread_rng().gen_range(0..a.len());
-    a[i]
+    a.choose_from(&mut thread_rng()).unwrap()
 }
 
 fn join_with<'i, I, S>(mut it: I, sep: S) -> String
@@ -54,6 +53,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/rpsls" => wrap!(rpsls(), Message),
         "/say" => wrap!(args.trim(), DeleteAndSend),
         "/anagram" => wrap!(anagram(args), Message),
+        "/rick" => wrap!(rick(), DeleteAndSend),
 
         "/deicide" => Some(LeaveChat),
         "/deletethis" | "/wakeup" => Some(DeleteMessage),
@@ -259,6 +259,37 @@ fn anagram(arg: &str) -> String {
     let slice = word.as_mut_slice();
     slice.shuffle(&mut thread_rng());
     slice.iter().map(|x| *x).collect()
+}
+
+fn rick() -> String {
+    let mut buf = [0u8; 11];
+
+    let id = if thread_rng().gen_ratio(7, 10) {
+        choose_from(&[
+            "dQw4w9WgXcQ",
+            "iik25wqIuFo",
+            "uT6mKkkvjJY",
+            "v7KafvXuqKE",
+            "2xx_2XNxxfA",
+        ])
+    } else {
+        const ALPHABET: &[u8] =
+            b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+            abcdefghijklmnopqrstuvwxyz\
+            0123456789\
+            _-";
+
+        for i in 0..11 {
+            buf[i] = choose_from(ALPHABET);
+        }
+        while buf[10] == b'_' || buf[10] == b'-' {
+            buf[10] = choose_from(ALPHABET);
+        }
+
+        std::str::from_utf8(&buf).unwrap()
+    };
+
+    format!("https://youtu.be/{}", id)
 }
 
 fn send_delete(chat_id: i64, message_id: i64) {
