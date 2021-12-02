@@ -5,7 +5,8 @@ use serde_json::json;
 use std::error::Error;
 
 fn choose_from<T: Copy>(a: &[T]) -> T {
-    a.choose_from(&mut thread_rng()).unwrap()
+    let i = thread_rng().gen_range(0..a.len());
+    a[i]
 }
 
 fn join_with<'i, I, S>(mut it: I, sep: S) -> String
