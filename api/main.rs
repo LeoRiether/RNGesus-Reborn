@@ -363,6 +363,7 @@ fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
                 "method": "sendMessage",
                 "chat_id": chat_id,
                 "text": text,
+                "disable_web_page_preview": true,
             }))
         }
 
