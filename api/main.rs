@@ -268,7 +268,7 @@ fn anagram(arg: &str) -> String {
 fn rick() -> String {
     let mut buf = [0u8; 11];
 
-    let id = if thread_rng().gen_ratio(7, 10) {
+    let id = if thread_rng().gen_ratio(5, 10) {
         choose_from(&[
             "dQw4w9WgXcQ",
             "iik25wqIuFo",
