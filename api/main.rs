@@ -257,8 +257,8 @@ fn rpsls() -> &'static str {
 
 fn anagram(arg: &str) -> String {
     let mut word: Vec<char> = arg.trim().chars().collect();
-    if (word.is_empty()) {
-        return "​".into(); // some invisible character
+    if word.is_empty() {
+        return "­ ".into(); // some invisible character
     }
     let slice = word.as_mut_slice();
     slice.shuffle(&mut thread_rng());
