@@ -244,11 +244,15 @@ fn dice(args: &str) -> String {
 
 fn rps() -> &'static str {
     let chosen = choose_from(&["Rock", "Paper", "Scissors"]);
-    let dice = thread_rng().gen_range(0..10);
-    match (chosen, dice) {
+    let super_paper = thread_rng().gen_ratio(1, 10);
+    match (chosen, super_paper {
         ("Paper", 0) => "Super Paper",
         _ => chosen,
     }
+}
+
+fn rpsg() -> &'static str {
+    choose_from(&["Rock", "Paper", "Scissors", "Gun"])
 }
 
 fn rpsls() -> &'static str {
