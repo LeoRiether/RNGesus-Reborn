@@ -51,6 +51,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/decide" => wrap!(decide(), Message),
         "/dice" => wrap!(dice(args), Message),
         "/rps" => wrap!(rps(), Message),
+        "/rpsg" => wrap!(rpsg(), Message),
         "/rpsls" => wrap!(rpsls(), Message),
         "/say" => wrap!(args.trim(), DeleteAndSend),
         "/anagram" => wrap!(anagram(args), Message),
