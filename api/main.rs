@@ -246,8 +246,10 @@ fn dice(args: &str) -> String {
 fn rps() -> &'static str {
     let chosen = choose_from(&["Rock", "Paper", "Scissors"]);
     let super_paper = thread_rng().gen_ratio(2, 10);
-    match (chosen, super_paper) {
-        ("Paper", true) => "Super Paper",
+    let rockscispaper = thread_rng().gen_ratio(5, 100);
+    match (chosen, super_paper, rockscispaper) {
+        (_, _, true) => "Rockscispaper",
+        ("Paper", true, _) => "Super Paper",
         _ => chosen,
     }
 }
