@@ -56,6 +56,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/say" => wrap!(args.trim(), DeleteAndSend),
         "/anagram" => wrap!(anagram(args), Message),
         "/rick" => wrap!(rick(), DeleteAndSend),
+        "/test" => wrap!(format!("test {}", choose_from(&["failed", "succeeded"])), Message),
 
         "/deicide" => Some(LeaveChat),
         "/deletethis" | "/wakeup" => Some(DeleteMessage),
