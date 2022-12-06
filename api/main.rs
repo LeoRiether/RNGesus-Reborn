@@ -86,6 +86,7 @@ fn list(text: &str) -> String {
         "Either {} or {}",
         "It's {} or nothing",
         "{} without a doubt",
+        "Do {} yourself",
     ];
 
     let split_char = if text.find(',').is_some() { ',' } else { ' ' };
