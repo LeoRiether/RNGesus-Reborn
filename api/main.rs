@@ -120,6 +120,7 @@ fn yesno() -> &'static str {
         "Hai",
         "Why yes",
         "Clearly",
+        "You have my blessing",
     ];
     const NO: &[&str] = &[
         "No",
@@ -179,6 +180,7 @@ fn decide() -> &'static str {
         "Hell yeah!",
         "Do it, or else...",
         "I'll be waiting for the results",
+        "You have my blessing",
     ];
     const NO: &[&str] = &[
         "No",
