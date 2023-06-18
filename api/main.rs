@@ -1,8 +1,9 @@
 use http::StatusCode;
 use now_lambda::{error::NowError, lambda, IntoResponse, Request, Response};
-use rand::{prelude::*, seq::SliceRandom, random, thread_rng};
+use rand::{prelude::*, random, seq::SliceRandom, thread_rng};
 use serde_json::json;
 use std::error::Error;
+use std::process::Command;
 
 fn choose_from<T: Copy>(a: &[T]) -> T {
     let i = thread_rng().gen_range(0..a.len());
@@ -10,8 +11,9 @@ fn choose_from<T: Copy>(a: &[T]) -> T {
 }
 
 fn join_with<'i, I, S>(mut it: I, sep: S) -> String
-    where I: Iterator<Item = &'i str>,
-          S: Fn(usize) -> String
+where
+    I: Iterator<Item = &'i str>,
+    S: Fn(usize) -> String,
 {
     let mut res = it.next().map(|s| s.to_string()).unwrap_or_default();
     for (i, s) in it.enumerate() {
@@ -56,7 +58,11 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/say" => wrap!(args.trim(), DeleteAndSend),
         "/anagram" => wrap!(anagram(args), Message),
         "/rick" => wrap!(rick(), DeleteAndSend),
-        "/test" => wrap!(format!("test {}", choose_from(&["failed", "succeeded"])), Message),
+        "/fortune" => wrap!(fortune(), Message),
+        "/test" => wrap!(
+            format!("test {}", choose_from(&["failed", "succeeded"])),
+            Message
+        ),
 
         "/deicide" => Some(LeaveChat),
         "/deletethis" | "/wakeup" => Some(DeleteMessage),
@@ -234,14 +240,17 @@ fn decide() -> &'static str {
 fn dice(args: &str) -> String {
     let args = args.trim_start();
     let (dice_arg, format_arg) = args.split_once(' ').unwrap_or((args, "Rolled a {}"));
-    let faces: Vec<_> = dice_arg.split(',').map(|d| d.parse::<i64>().unwrap_or(6)).collect();
+    let faces: Vec<_> = dice_arg
+        .split(',')
+        .map(|d| d.parse::<i64>().unwrap_or(6))
+        .collect();
     if faces.iter().min().copied().unwrap_or(0) <= 0 {
         return "...".into();
     }
 
     let format_split = format_arg.split("{}");
     join_with(format_split, |i| {
-        let f  = faces.get(i).or(faces.last()).copied().unwrap_or(6);
+        let f = faces.get(i).or(faces.last()).copied().unwrap_or(6);
         let roll = thread_rng().gen_range(1..=f);
         roll.to_string()
     })
@@ -288,8 +297,7 @@ fn rick() -> String {
             "2xx_2XNxxfA",
         ])
     } else {
-        const ALPHABET: &[u8] =
-            b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+        const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
             abcdefghijklmnopqrstuvwxyz\
             0123456789\
             _-";
@@ -305,6 +313,14 @@ fn rick() -> String {
     };
 
     format!("https://youtu.be/{}", id)
+}
+
+fn fortune() -> String {
+    Command::new("fortune")
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .unwrap_or_else(|| String::from("Couldn't run `fortune` command sry ¯\\_(ツ)_/¯"))
 }
 
 fn send_delete(chat_id: i64, message_id: i64) {
