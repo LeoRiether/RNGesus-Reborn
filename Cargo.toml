@@ -2,19 +2,20 @@
 name = "api"
 version = "0.1.0"
 authors = [ "LeoRiether <leonardoalves8217@gmail.com>" ]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 http = "0.1"
-now_lambda = "*"
 rand = "0.8.2"
 serde = "1.0.121"
 serde_json = "1.0.61"
+tokio = { version = "1", features = ["macros"] }
+vercel_runtime = { version = "1.0.2" }
 
-  [dependencies.reqwest]
-  version = "0.11"
-  features = [ "blocking" ]
+[dependencies.reqwest]
+version = "0.11"
+features = [ "blocking" ]
 
 [[bin]]
 name = "main"
-path = "/mnt/c/Workspace/RNGesus-Reborn/api/main.rs"
+path = "api/main.rs"

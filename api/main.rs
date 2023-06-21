@@ -1,9 +1,8 @@
 use http::StatusCode;
-use now_lambda::{error::NowError, lambda, IntoResponse, Request, Response};
 use rand::{prelude::*, random, seq::SliceRandom, thread_rng};
 use serde_json::json;
-use std::error::Error;
 use std::process::Command;
+use vercel_runtime::{bundled_api, run, Body, Error, Request, Response};
 
 fn choose_from<T: Copy>(a: &[T]) -> T {
     let i = thread_rng().gen_range(0..a.len());
@@ -23,7 +22,7 @@ where
     res
 }
 
-const BOTMENTION: &'static str = "@therngesusbot";
+const BOTMENTION: &str = "@therngesusbot";
 
 enum BotResponse {
     Message(String),
@@ -108,7 +107,7 @@ fn list(text: &str) -> String {
 
     let chosen = choose_from(&args);
     let template = choose_from(TEMPLATES);
-    return template.replace("{}", chosen);
+    template.replace("{}", chosen)
 }
 
 fn yesno() -> &'static str {
@@ -279,11 +278,11 @@ fn rpsls() -> &'static str {
 fn anagram(arg: &str) -> String {
     let mut word: Vec<char> = arg.trim().chars().collect();
     if word.is_empty() {
-        return "­ ".into(); // some invisible character
+        return "\u{AD} ".into(); // some invisible character
     }
     let slice = word.as_mut_slice();
     slice.shuffle(&mut thread_rng());
-    slice.iter().map(|x| *x).collect()
+    slice.iter().copied().collect()
 }
 
 fn rick() -> String {
@@ -325,9 +324,9 @@ fn fortune() -> String {
 }
 
 fn dart() -> String {
-    let rng = thread_rng();
-    let lat = rng.gen_range(-90.0..=90.0);
-    let lon = rng.gen_range(-180.0..=180.0);
+    let mut rng = thread_rng();
+    let lat: f32 = rng.gen_range(-90.0..=90.0);
+    let lon: f32 = rng.gen_range(-180.0..=180.0);
     let lat_suf = if lat >= 0.0 { "N" } else { "S" };
     let lon_suf = if lon >= 0.0 { "E" } else { "W" };
     format!(
@@ -343,7 +342,7 @@ fn send_delete(chat_id: i64, message_id: i64) {
     let token = std::env::var("BOT_TOKEN").unwrap();
     let client = reqwest::blocking::Client::new();
     client
-        .post(&format!(
+        .post(format!(
             "https://api.telegram.org/bot{}/deleteMessage",
             token
         ))
@@ -362,7 +361,7 @@ fn send_delete(chat_id: i64, message_id: i64) {
 fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
     use serde_json::Value;
     let body: Value = match req.body() {
-        now_lambda::Body::Binary(data) => {
+        Body::Binary(data) => {
             serde_json::from_slice(data).map_err(|_| "request body is not valid json")?
         }
         _ => return Err("Request body is not in binary format"),
@@ -382,7 +381,7 @@ fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
         .ok_or("message.message_id not found");
 
     use BotResponse::*;
-    match execute(&text) {
+    match execute(text) {
         Some(Message(text)) => Ok(json!({
             "method": "sendMessage",
             "chat_id": chat_id,
@@ -414,22 +413,20 @@ fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
     }
 }
 
-fn handler(req: Request) -> Result<impl IntoResponse, NowError> {
+#[bundled_api]
+pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     match get_response(req) {
         Ok(res) => Ok(Response::builder()
             .status(StatusCode::OK)
             .header("Content-Type", "application/json")
-            .body(res.to_string())
-            .expect("Something happened")),
+            .body(res.to_string())),
 
-        Err(e) => Ok(Response::builder()
-            .status(StatusCode::OK)
-            .body(e.into())
-            .expect("Something happened")),
+        Err(e) => Ok(Response::builder().status(StatusCode::OK).body(e.into())),
     }
 }
 
 // Start the runtime with the handler
-fn main() -> Result<(), Box<dyn Error>> {
-    Ok(lambda!(handler))
+#[tokio::main]
+async fn main() -> Result<(), Error> {
+    run(handler).await
 }
