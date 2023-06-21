@@ -59,6 +59,7 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/anagram" => wrap!(anagram(args), Message),
         "/rick" => wrap!(rick(), DeleteAndSend),
         "/fortune" => wrap!(fortune(), Message),
+        "/dart" => wrap!(dart(), Message),
         "/test" => wrap!(
             format!("test {}", choose_from(&["failed", "succeeded"])),
             Message
@@ -321,6 +322,21 @@ fn fortune() -> String {
         .ok()
         .and_then(|o| String::from_utf8(o.stdout).ok())
         .unwrap_or_else(|| String::from("Couldn't run `fortune` command sry ¯\\_(ツ)_/¯"))
+}
+
+fn dart() -> String {
+    let rng = thread_rng();
+    let lat = rng.gen_range(-90.0..=90.0);
+    let lon = rng.gen_range(-180.0..=180.0);
+    let lat_suf = if lat >= 0.0 { "N" } else { "S" };
+    let lon_suf = if lon >= 0.0 { "E" } else { "W" };
+    format!(
+        "https://www.google.com/maps/place/{:.6}{}+{:.6}{}",
+        lat.abs(),
+        lat_suf,
+        lon.abs(),
+        lon_suf
+    )
 }
 
 fn send_delete(chat_id: i64, message_id: i64) {
