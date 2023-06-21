@@ -1,8 +1,7 @@
-use http::StatusCode;
 use rand::{prelude::*, random, seq::SliceRandom, thread_rng};
 use serde_json::json;
 use std::process::Command;
-use vercel_runtime::{bundled_api, run, Body, Error, Request, Response};
+use vercel_runtime::{run, Body, Error, Request, Response, StatusCode};
 
 fn choose_from<T: Copy>(a: &[T]) -> T {
     let i = thread_rng().gen_range(0..a.len());
@@ -413,15 +412,15 @@ fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
     }
 }
 
-#[bundled_api]
 pub async fn handler(req: Request) -> Result<Response<Body>, Error> {
     match get_response(req) {
         Ok(res) => Ok(Response::builder()
             .status(StatusCode::OK)
             .header("Content-Type", "application/json")
-            .body(res.to_string())),
+            .body(res.to_string().into())
+            .expect("Couldn't create response")),
 
-        Err(e) => Ok(Response::builder().status(StatusCode::OK).body(e.into())),
+        Err(e) => Ok(Response::builder().status(StatusCode::OK).body(e.into())?),
     }
 }
 
