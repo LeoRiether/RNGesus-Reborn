@@ -16,7 +16,7 @@ where
     let mut res = it.next().map(|s| s.to_string()).unwrap_or_default();
     for (i, s) in it.enumerate() {
         res.push_str(&sep(i));
-        res.push_str(&s);
+        res.push_str(s);
     }
     res
 }
@@ -25,6 +25,7 @@ const BOTMENTION: &str = "@therngesusbot";
 
 enum BotResponse {
     Message(String),
+    Photo { url: String, caption: String },
     LeaveChat,
     DeleteMessage,
     DeleteAndSend(String), // delete the command and send some message
@@ -58,6 +59,8 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/rick" => wrap!(rick(), DeleteAndSend),
         "/fortune" => wrap!(fortune(), Message),
         "/dart" => wrap!(dart(), Message),
+        "/gato" | "/cat" => Some(cat()),
+
         "/test" => wrap!(
             format!("test {}", choose_from(&["failed", "succeeded"])),
             Message
@@ -337,6 +340,13 @@ fn dart() -> String {
     )
 }
 
+fn cat() -> BotResponse {
+    BotResponse::Photo {
+        url: "https://cataas.com/cat".into(),
+        caption: "".into(),
+    }
+}
+
 fn send_delete(chat_id: i64, message_id: i64) {
     let token = std::env::var("BOT_TOKEN").unwrap();
     let client = reqwest::blocking::Client::new();
@@ -385,6 +395,13 @@ fn get_response(req: Request) -> Result<serde_json::Value, &'static str> {
             "method": "sendMessage",
             "chat_id": chat_id,
             "text": text,
+        })),
+
+        Some(Photo { url, caption }) => Ok(json!({
+            "method": "sendPhoto",
+            "chat_id": chat_id,
+            "photo": url,
+            "caption": caption,
         })),
 
         Some(LeaveChat) => Ok(json!({
