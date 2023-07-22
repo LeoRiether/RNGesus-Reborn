@@ -59,7 +59,8 @@ fn execute(text: &str) -> Option<BotResponse> {
         "/rick" => wrap!(rick(), DeleteAndSend),
         "/fortune" => wrap!(fortune(), Message),
         "/dart" => wrap!(dart(), Message),
-        "/gato" | "/cat" => Some(cat()),
+        "/gato" => Some(cat("gato".into())),
+        "/cat" => Some(cat("cat".into())),
 
         "/test" => wrap!(
             format!("test {}", choose_from(&["failed", "succeeded"])),
@@ -340,12 +341,12 @@ fn dart() -> String {
     )
 }
 
-fn cat() -> BotResponse {
+fn cat(caption: String) -> BotResponse {
     let mut rng = thread_rng();
     let cache_killer = rng.gen::<u64>();
     BotResponse::Photo {
         url: format!("https://cataas.com/cat?x={:x}", cache_killer),
-        caption: "".into(),
+        caption,
     }
 }
 
