@@ -341,8 +341,10 @@ fn dart() -> String {
 }
 
 fn cat() -> BotResponse {
+    let mut rng = thread_rng();
+    let cache_killer = rng.gen::<u64>();
     BotResponse::Photo {
-        url: "https://cataas.com/cat".into(),
+        url: format!("https://cataas.com/cat?x={:x}", cache_killer),
         caption: "".into(),
     }
 }
